@@ -31,19 +31,29 @@ describe("catalog-level upstreamModelId/serviceTier fallback", () => {
 		expect(config.serviceTier).toBe("flex");
 	});
 
-	it.each([
-		["openai", "gpt-5.4-mini-fast", "gpt-5.4-mini"],
-		["openai-codex", "gpt-5.6-sol-fast", "gpt-5.6-sol"],
-	])("resolves %s/%s with its base wire id and priority tier", async (provider, id, upstreamId) => {
+	it("resolves the direct OpenAI fast variant with its base wire id and priority tier", async () => {
 		const runtime = await ModelRuntime.create({ credentials: AuthStorage.inMemory(), modelsPath: null });
-		const model = runtime.getModel(provider, id);
+		const model = runtime.getModel("openai", "gpt-5.4-mini-fast");
 		expect(model).toBeDefined();
 
 		const config = runtime.getCompatibilityRequestConfig(model!);
 		const payload = addServiceTierToPayload(model!.api, { model: config.upstreamModelId }, config.serviceTier);
 
-		expect(config.upstreamModelId).toBe(upstreamId);
+		expect(config.upstreamModelId).toBe("gpt-5.4-mini");
 		expect(config.serviceTier).toBe("priority");
-		expect(payload).toEqual({ model: upstreamId, service_tier: "priority" });
+		expect(payload).toEqual({ model: "gpt-5.4-mini", service_tier: "priority" });
+	});
+
+	it("resolves the Codex fast variant with its base wire id and priority tier", async () => {
+		const runtime = await ModelRuntime.create({ credentials: AuthStorage.inMemory(), modelsPath: null });
+		const model = runtime.getModel("openai-codex", "gpt-5.6-sol-fast");
+		expect(model).toBeDefined();
+
+		const config = runtime.getCompatibilityRequestConfig(model!);
+		const payload = addServiceTierToPayload(model!.api, { model: config.upstreamModelId }, config.serviceTier);
+
+		expect(config.upstreamModelId).toBe("gpt-5.6-sol");
+		expect(config.serviceTier).toBe("priority");
+		expect(payload).toEqual({ model: "gpt-5.6-sol", service_tier: "priority" });
 	});
 });
