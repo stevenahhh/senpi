@@ -447,11 +447,11 @@ describe("startCodexUsagePolling", () => {
 			release.resolve();
 			expect(await observed.promise).toEqual(expected);
 			await vi.advanceTimersByTimeAsync(60_000);
-			expect(loadCalls).toBe(2);
+			expect([loadCalls, vi.getTimerCount()]).toEqual([2, 1]);
 
 			polling.stop();
 			await vi.advanceTimersByTimeAsync(180_000);
-			expect(loadCalls).toBe(2);
+			expect([loadCalls, vi.getTimerCount()]).toEqual([2, 0]);
 		} finally {
 			polling.stop();
 		}
@@ -501,13 +501,13 @@ describe("openai-codex-usage extension lifecycle", () => {
 			expect(harness.notify).toHaveBeenLastCalledWith("Provider usage: hidden", "info");
 			const callsWhileHidden = fetchMock.mock.calls.length;
 			await vi.advanceTimersByTimeAsync(180_000);
-			expect(fetchMock).toHaveBeenCalledTimes(callsWhileHidden);
+			expect([fetchMock.mock.calls.length, vi.getTimerCount()]).toEqual([callsWhileHidden, 0]);
 
 			const republished = harness.waitForStatus(STATUS_KEY, "5h 88% | W 66%");
 			await harness.runUsageCommand();
 			await republished;
 			expect(harness.notify).toHaveBeenLastCalledWith("Provider usage: shown", "info");
-			expect(fetchMock).toHaveBeenCalledTimes(callsWhileHidden + 1);
+			expect([fetchMock.mock.calls.length, vi.getTimerCount()]).toEqual([callsWhileHidden + 1, 1]);
 		} finally {
 			await harness.emit("session_shutdown");
 		}
@@ -537,15 +537,14 @@ describe("openai-codex-usage extension lifecycle", () => {
 			const secondSignal = await secondStarted.promise;
 			await firstAborted.promise;
 
-			expect(firstSignal.aborted).toBe(true);
-			expect(secondSignal.aborted).toBe(false);
+			expect([firstSignal.aborted, secondSignal.aborted, vi.getTimerCount()]).toEqual([true, false, 1]);
 			expect(fetchMock).toHaveBeenCalledTimes(2);
 
 			const clearedForShutdown = harness.waitForStatus(STATUS_KEY, undefined);
 			await harness.emit("session_shutdown");
 			await clearedForShutdown;
 			await secondAborted.promise;
-			expect(secondSignal.aborted).toBe(true);
+			expect([secondSignal.aborted, vi.getTimerCount()]).toEqual([true, 0]);
 
 			await vi.advanceTimersByTimeAsync(180_000);
 			expect(fetchMock).toHaveBeenCalledTimes(2);
