@@ -92,12 +92,13 @@ describe("OpenAI -fast priority-tier catalog variants", () => {
 	});
 
 	it("ships compatible Codex fast variants only for priority-eligible base models", () => {
-		const codexIds = getModels("openai-codex").map((model) => model.id);
+		const codexModels = getModels("openai-codex");
+		const codexIds = codexModels.map((model) => model.id);
 		const eligibleIds = PRIORITY_TIER_MODEL_IDS.filter((id) => codexIds.includes(id));
 
 		for (const id of eligibleIds) {
-			const base = getModel("openai-codex", id);
-			const fast = getModel("openai-codex", `${id}-fast`);
+			const base = codexModels.find((model) => model.id === id);
+			const fast = codexModels.find((model) => model.id === `${id}-fast`);
 			expect(fast, `${id}-fast should exist`).toBeDefined();
 			expect(fast!.upstreamModelId).toBe(id);
 			expect(fast!.serviceTier).toBe("priority");
