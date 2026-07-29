@@ -13,6 +13,12 @@
   clear no-op notifications.
 - The shared service-tier payload injector now covers
   `openai-codex-responses`; explicit payload tiers remain authoritative.
+- Provider-request tier injection is scoped to the request event's resolved
+  model rather than the mutable current-session model, preventing concurrent
+  requests from borrowing another model's tier.
+- Persistent direct-OpenAI service-tier settings are loaded with the session's
+  project-trust decision; Codex requests continue to derive their tier only
+  from the selected model.
 - `test/suite/service-tier-extension.test.ts` covers session reset, both model
   switches, upstream request model plus priority tier, provider/model gating,
   non-Codex payloads, and explicit-tier preservation.

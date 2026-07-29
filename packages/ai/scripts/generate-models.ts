@@ -2830,11 +2830,16 @@ async function generateModels() {
 	// Emit after metadata application so variants clone fully processed base models.
 	// Cost rates stay at base values: the openai-responses adapter multiplies usage
 	// cost by the service-tier multiplier at request time, so raised catalog rates
-	// would double-count. Scoped to the direct OpenAI provider; Azure clones and the
-	// Codex backend are intentionally excluded.
+	// would double-count. Scoped to the direct OpenAI and Codex providers; Azure
+	// clones and other compatibility providers remain excluded.
 	const openAiFastVariants: Model<Api>[] = [];
 	for (const model of allModels) {
-		if (model.provider !== "openai" || !OPENAI_PRIORITY_TIER_MODEL_IDS.has(model.id)) continue;
+		if (
+			(model.provider !== "openai" && model.provider !== "openai-codex") ||
+			!OPENAI_PRIORITY_TIER_MODEL_IDS.has(model.id)
+		) {
+			continue;
+		}
 		openAiFastVariants.push({
 			...model,
 			id: `${model.id}-fast`,

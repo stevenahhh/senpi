@@ -67,7 +67,9 @@ export default function serviceTierExtension(pi: ExtensionAPI): void {
 	let settingsServiceTier: ServiceTier | undefined;
 
 	pi.on("session_start", async (_event, ctx) => {
-		const settingsManager = SettingsManager.create(ctx.cwd);
+		const settingsManager = SettingsManager.create(ctx.cwd, undefined, {
+			projectTrusted: ctx.isProjectTrusted(),
+		});
 		settingsServiceTier = settingsManager.getOpenAIServiceTier();
 
 		const model = ctx.model;
@@ -108,8 +110,12 @@ export default function serviceTierExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("before_provider_request", (event, ctx) => {
+		const requestModel = event.model ?? ctx.model;
+		const requestServiceTier = event.model ? ctx.modelRegistry.getServiceTier(event.model) : ctx.serviceTier;
 		const effectiveServiceTier =
-			ctx.model?.api === OPENAI_CODEX_RESPONSES_API ? ctx.serviceTier : (ctx.serviceTier ?? settingsServiceTier);
-		return addServiceTierToPayload(ctx.model?.api, event.payload, effectiveServiceTier);
+			requestModel?.api === OPENAI_CODEX_RESPONSES_API
+				? requestServiceTier
+				: (requestServiceTier ?? settingsServiceTier);
+		return addServiceTierToPayload(requestModel?.api, event.payload, effectiveServiceTier);
 	});
 }

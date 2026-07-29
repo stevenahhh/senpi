@@ -90,6 +90,20 @@ describe("service-tier builtin extension", () => {
 			service_tier: "priority",
 		});
 
+		const otherRequestModel = {
+			...harness.getModel(BASE_MODEL_ID)!,
+			id: "claude-sonnet",
+			provider: "anthropic",
+			api: "anthropic-messages",
+		} as const;
+		const otherPayload = { model: otherRequestModel.id };
+		expect(
+			await runner.emitBeforeProviderRequest(otherPayload, undefined, {
+				model: otherRequestModel,
+				headers: {},
+			}),
+		).toBe(otherPayload);
+
 		// when
 		await harness.session.prompt("/fast");
 

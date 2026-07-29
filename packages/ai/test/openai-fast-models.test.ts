@@ -89,6 +89,23 @@ describe("OpenAI -fast priority-tier catalog variants", () => {
 		const catalogIds = getModels("openai").map((model) => model.id);
 		expect(catalogIds.some((id) => id.endsWith("-fast-fast"))).toBe(false);
 		expect(getModels("azure-openai-responses").some((model) => model.id.endsWith("-fast"))).toBe(false);
-		expect(getModels("openai-codex").some((model) => model.id.endsWith("-fast"))).toBe(false);
+	});
+
+	it("ships compatible Codex fast variants only for priority-eligible base models", () => {
+		const codexIds = getModels("openai-codex").map((model) => model.id);
+		const eligibleIds = PRIORITY_TIER_MODEL_IDS.filter((id) => codexIds.includes(id));
+
+		for (const id of eligibleIds) {
+			const base = getModel("openai-codex", id);
+			const fast = getModel("openai-codex", `${id}-fast`);
+			expect(fast, `${id}-fast should exist`).toBeDefined();
+			expect(fast!.upstreamModelId).toBe(id);
+			expect(fast!.serviceTier).toBe("priority");
+			expect(fast!.api).toBe(base!.api);
+			expect(fast!.provider).toBe("openai-codex");
+		}
+
+		expect(codexIds).not.toContain("gpt-5.3-codex-spark-fast");
+		expect(codexIds.some((id) => id.endsWith("-fast-fast"))).toBe(false);
 	});
 });

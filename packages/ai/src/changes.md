@@ -1,5 +1,25 @@
 # AI Source Changes
 
+## 2026-07-29 - Restore Codex `-fast` variants through service-tier metadata
+
+### What changed and why
+
+- `scripts/generate-models.ts` now emits eligible `openai-codex` `-fast`
+  variants alongside direct OpenAI variants. Each alias keeps the base wire
+  model in `upstreamModelId` and requests `serviceTier: "priority"`.
+- Upstream commit `266234047` removed older Codex fast aliases when that path
+  did not work. The current `openai-codex-responses` transport now resolves
+  `upstreamModelId` and carries service-tier metadata through request creation,
+  so catalog aliases no longer rely on the broken wire-model substitution that
+  motivated the prior removal.
+- Eligibility still follows `OPENAI_PRIORITY_TIER_MODEL_IDS`; unsupported Codex
+  models such as `gpt-5.3-codex-spark` receive no fast alias.
+
+### Expected merge conflict zones
+
+- LOW: the existing fast-variant emission filter in
+  `scripts/generate-models.ts` and regenerated `openai-codex` model data.
+
 ## 2026-07-29 - Classify zero-event provider stream stalls
 
 ### What changed and why
